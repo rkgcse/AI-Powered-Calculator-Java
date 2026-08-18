@@ -1,6 +1,7 @@
 package com.rkgcse.calculator.ui;
 
 import com.rkgcse.calculator.ai.NaturalLanguageEngine;
+import com.rkgcse.calculator.core.CalculatorEngine;
 import com.rkgcse.calculator.history.CalculationHistory;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
@@ -10,206 +11,265 @@ import java.text.DecimalFormat;
 
 public class CalculatorFrame extends JFrame {
     private final JTextField display = new JTextField();
-    private final JLabel result = new JLabel("0", SwingConstants.CENTER);
+    private final JLabel result = new JLabel("Ready", SwingConstants.CENTER);
     private final JLabel modeLabel = new JLabel("Simple Calculator", SwingConstants.CENTER);
-    private final DefaultListModel<String> historyModel = new DefaultListModel<>();
+    private final JLabel historyLabel = new JLabel("", SwingConstants.CENTER);
+    private final JPanel scientificPanel = new JPanel(new GridLayout(2, 6, 8, 8));
+    private final JButton modeButton = new AnimatedButton("⚗ Scientific Mode", COLORS.ACCENT, COLORS.ACCENT_HOVER, Color.WHITE);
+    private final CalculatorEngine calculator = new CalculatorEngine();
     private final NaturalLanguageEngine ai = new NaturalLanguageEngine();
     private final CalculationHistory history = new CalculationHistory();
     private final DecimalFormat format = new DecimalFormat("0.##########");
     private final CelebrationPanel celebration = new CelebrationPanel();
     private boolean scientific;
-    private double firstNumber;
-    private String operator = "";
-    private boolean freshResult = true;
+    private boolean freshResult;
 
-    private static final Color BG = new Color(246, 243, 255);
-    private static final Color CARD = new Color(255, 255, 255);
-    private static final Color TEXT = new Color(55, 48, 75);
-    private static final Color ACCENT = new Color(132, 102, 190);
-    private static final Color SOFT = new Color(235, 228, 249);
+    private static final class COLORS {
+        static final Color BG = new Color(247, 249, 255);
+        static final Color CARD = new Color(255, 255, 255);
+        static final Color DISPLAY = new Color(250, 248, 255);
+        static final Color TEXT = new Color(55, 52, 75);
+        static final Color MUTED = new Color(112, 105, 130);
+        static final Color SOFT = new Color(236, 232, 249);
+        static final Color SOFT_HOVER = new Color(224, 216, 244);
+        static final Color ACCENT = new Color(133, 105, 193);
+        static final Color ACCENT_HOVER = new Color(116, 88, 177);
+        static final Color OP = new Color(235, 243, 255);
+        static final Color OP_HOVER = new Color(217, 231, 250);
+        static final Color EQUAL = new Color(117, 177, 150);
+        static final Color EQUAL_HOVER = new Color(96, 157, 130);
+        static final Color DANGER = new Color(247, 224, 232);
+    }
 
     public CalculatorFrame() {
         setTitle("AI-Powered Calculator");
-        setSize(700, 780);
-        setMinimumSize(new Dimension(560, 680));
+        setSize(720, 850);
+        setMinimumSize(new Dimension(600, 700));
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
         buildUi();
     }
 
     private void buildUi() {
-        JPanel root = new JPanel(new BorderLayout(16, 16));
-        root.setBackground(BG);
-        root.setBorder(new EmptyBorder(22, 28, 14, 28));
+        JPanel root = new JPanel(new BorderLayout(14, 14));
+        root.setBackground(COLORS.BG);
+        root.setBorder(new EmptyBorder(20, 28, 12, 28));
 
         JLabel title = new JLabel("AI-Powered Calculator", SwingConstants.CENTER);
-        title.setFont(new Font("SansSerif", Font.BOLD, 28));
-        title.setForeground(TEXT);
-        root.add(title, BorderLayout.NORTH);
-
-        JPanel content = new JPanel(new GridBagLayout());
-        content.setOpaque(false);
-        GridBagConstraints gbc = new GridBagConstraints();
-        gbc.gridx = 0; gbc.weightx = 1; gbc.fill = GridBagConstraints.HORIZONTAL;
-        gbc.insets = new Insets(6, 0, 6, 0);
+        title.setFont(new Font("SansSerif", Font.BOLD, 29));
+        title.setForeground(COLORS.TEXT);
+        JLabel subtitle = new JLabel("Fast everyday maths • scientific tools • natural-language commands", SwingConstants.CENTER);
+        subtitle.setFont(new Font("SansSerif", Font.PLAIN, 13));
+        subtitle.setForeground(COLORS.MUTED);
+        JPanel heading = new JPanel();
+        heading.setOpaque(false);
+        heading.setLayout(new BoxLayout(heading, BoxLayout.Y_AXIS));
+        heading.add(title);
+        heading.add(Box.createVerticalStrut(4));
+        heading.add(subtitle);
+        root.add(heading, BorderLayout.NORTH);
 
         JPanel card = new JPanel();
         card.setLayout(new BoxLayout(card, BoxLayout.Y_AXIS));
-        card.setBackground(CARD);
+        card.setBackground(COLORS.CARD);
         card.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(new Color(225, 217, 240)),
-                new EmptyBorder(20, 24, 20, 24)));
+                BorderFactory.createLineBorder(new Color(224, 221, 237)),
+                new EmptyBorder(18, 22, 18, 22)));
 
         modeLabel.setFont(new Font("SansSerif", Font.BOLD, 15));
-        modeLabel.setForeground(ACCENT);
+        modeLabel.setForeground(COLORS.ACCENT);
+        modeLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
         card.add(modeLabel);
         card.add(Box.createVerticalStrut(10));
 
         display.setHorizontalAlignment(JTextField.RIGHT);
-        display.setFont(new Font("SansSerif", Font.BOLD, 25));
-        display.setForeground(TEXT);
-        display.setBackground(new Color(250, 248, 253));
+        display.setFont(new Font("SansSerif", Font.BOLD, 27));
+        display.setForeground(COLORS.TEXT);
+        display.setBackground(COLORS.DISPLAY);
+        display.setCaretColor(COLORS.ACCENT);
         display.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(new Color(225, 217, 240)),
+                BorderFactory.createLineBorder(new Color(222, 216, 237)),
                 new EmptyBorder(12, 14, 12, 14)));
+        display.setMaximumSize(new Dimension(Integer.MAX_VALUE, 62));
         card.add(display);
-        card.add(Box.createVerticalStrut(8));
+        card.add(Box.createVerticalStrut(6));
 
-        result.setFont(new Font("SansSerif", Font.BOLD, 25));
-        result.setForeground(TEXT);
-        result.setBorder(new EmptyBorder(4, 0, 4, 0));
+        result.setFont(new Font("SansSerif", Font.BOLD, 22));
+        result.setForeground(COLORS.TEXT);
+        result.setAlignmentX(Component.CENTER_ALIGNMENT);
         card.add(result);
+        historyLabel.setFont(new Font("SansSerif", Font.PLAIN, 12));
+        historyLabel.setForeground(COLORS.MUTED);
+        historyLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        card.add(historyLabel);
+        card.add(Box.createVerticalStrut(10));
 
-        JPanel buttons = new JPanel(new GridLayout(0, 4, 9, 9));
-        buttons.setOpaque(false);
-        addButton(buttons, "C", e -> clear());
-        addButton(buttons, "⌫", e -> backspace());
-        addButton(buttons, "%", e -> append("%"));
-        addButton(buttons, "÷", e -> chooseOperator("/"));
-        addButton(buttons, "7", e -> append("7"));
-        addButton(buttons, "8", e -> append("8"));
-        addButton(buttons, "9", e -> append("9"));
-        addButton(buttons, "×", e -> chooseOperator("*"));
-        addButton(buttons, "4", e -> append("4"));
-        addButton(buttons, "5", e -> append("5"));
-        addButton(buttons, "6", e -> append("6"));
-        addButton(buttons, "−", e -> chooseOperator("-"));
-        addButton(buttons, "1", e -> append("1"));
-        addButton(buttons, "2", e -> append("2"));
-        addButton(buttons, "3", e -> append("3"));
-        addButton(buttons, "+", e -> chooseOperator("+"));
-        addButton(buttons, "0", e -> append("0"));
-        addButton(buttons, ".", e -> append("."));
-        addButton(buttons, "AI", e -> aiCalculate());
-        addButton(buttons, "=", e -> calculate());
-        card.add(buttons);
+        JPanel simple = new JPanel(new GridLayout(5, 4, 8, 8));
+        simple.setOpaque(false);
+        addButton(simple, "C", COLORS.DANGER, COLORS.SOFT_HOVER, COLORS.TEXT, e -> clear());
+        addButton(simple, "⌫", COLORS.SOFT, COLORS.SOFT_HOVER, COLORS.TEXT, e -> backspace());
+        addButton(simple, "(", COLORS.OP, COLORS.OP_HOVER, COLORS.TEXT, e -> append("("));
+        addButton(simple, ")", COLORS.OP, COLORS.OP_HOVER, COLORS.TEXT, e -> append(")"));
+        addButton(simple, "7", COLORS.SOFT, COLORS.SOFT_HOVER, COLORS.TEXT, e -> append("7"));
+        addButton(simple, "8", COLORS.SOFT, COLORS.SOFT_HOVER, COLORS.TEXT, e -> append("8"));
+        addButton(simple, "9", COLORS.SOFT, COLORS.SOFT_HOVER, COLORS.TEXT, e -> append("9"));
+        addButton(simple, "÷", COLORS.OP, COLORS.OP_HOVER, COLORS.ACCENT, e -> append("/"));
+        addButton(simple, "4", COLORS.SOFT, COLORS.SOFT_HOVER, COLORS.TEXT, e -> append("4"));
+        addButton(simple, "5", COLORS.SOFT, COLORS.SOFT_HOVER, COLORS.TEXT, e -> append("5"));
+        addButton(simple, "6", COLORS.SOFT, COLORS.SOFT_HOVER, COLORS.TEXT, e -> append("6"));
+        addButton(simple, "×", COLORS.OP, COLORS.OP_HOVER, COLORS.ACCENT, e -> append("*"));
+        addButton(simple, "1", COLORS.SOFT, COLORS.SOFT_HOVER, COLORS.TEXT, e -> append("1"));
+        addButton(simple, "2", COLORS.SOFT, COLORS.SOFT_HOVER, COLORS.TEXT, e -> append("2"));
+        addButton(simple, "3", COLORS.SOFT, COLORS.SOFT_HOVER, COLORS.TEXT, e -> append("3"));
+        addButton(simple, "−", COLORS.OP, COLORS.OP_HOVER, COLORS.ACCENT, e -> append("-"));
+        addButton(simple, "0", COLORS.SOFT, COLORS.SOFT_HOVER, COLORS.TEXT, e -> append("0"));
+        addButton(simple, ".", COLORS.SOFT, COLORS.SOFT_HOVER, COLORS.TEXT, e -> append("."));
+        addButton(simple, "%", COLORS.OP, COLORS.OP_HOVER, COLORS.ACCENT, e -> append("%"));
+        addButton(simple, "+", COLORS.OP, COLORS.OP_HOVER, COLORS.ACCENT, e -> append("+"));
+        addButton(simple, "=", COLORS.EQUAL, COLORS.EQUAL_HOVER, Color.WHITE, e -> calculate());
+        card.add(simple);
+        card.add(Box.createVerticalStrut(10));
+
+        buildScientificPanel();
+        scientificPanel.setVisible(false);
+        card.add(scientificPanel);
+        card.add(Box.createVerticalStrut(10));
+
+        JPanel controls = new JPanel(new GridLayout(1, 3, 8, 8));
+        controls.setOpaque(false);
+        addButton(controls, "🤖 AI", COLORS.ACCENT, COLORS.ACCENT_HOVER, Color.WHITE, e -> aiCalculate());
+        addButton(controls, "🧹 Clear", COLORS.DANGER, COLORS.SOFT_HOVER, COLORS.TEXT, e -> clear());
+        modeButton.addActionListener(e -> toggleScientific());
+        controls.add(modeButton);
+        card.add(controls);
         card.add(Box.createVerticalStrut(12));
 
-        JButton mode = new JButton("Switch to Scientific");
-        styleButton(mode, ACCENT, Color.WHITE);
-        mode.addActionListener(e -> toggleScientific(card));
-        card.add(mode);
+        JLabel help = new JLabel("Try: 25% of 840  •  sqrt(144)  •  2^8  •  sin(30)  •  5!", SwingConstants.CENTER);
+        help.setFont(new Font("SansSerif", Font.PLAIN, 12));
+        help.setForeground(COLORS.MUTED);
+        help.setAlignmentX(Component.CENTER_ALIGNMENT);
+        card.add(help);
 
-        gbc.gridy = 0; gbc.weighty = 1; gbc.anchor = GridBagConstraints.CENTER;
-        content.add(card, gbc);
-        root.add(content, BorderLayout.CENTER);
+        JPanel centered = new JPanel(new GridBagLayout());
+        centered.setOpaque(false);
+        centered.add(card);
+        root.add(centered, BorderLayout.CENTER);
 
-        JPanel bottom = new JPanel(new BorderLayout(8, 5));
-        bottom.setOpaque(false);
         JLabel footer = new JLabel("made with ❤️ by Raushan kumar", SwingConstants.CENTER);
         footer.setFont(new Font("SansSerif", Font.PLAIN, 13));
-        footer.setForeground(new Color(105, 94, 125));
-        bottom.add(footer, BorderLayout.SOUTH);
-        root.add(bottom, BorderLayout.SOUTH);
+        footer.setForeground(COLORS.MUTED);
+        root.add(footer, BorderLayout.SOUTH);
 
         setContentPane(root);
         setGlassPane(celebration);
         celebration.setVisible(true);
-        display.addActionListener(e -> aiCalculate());
+        display.addActionListener(e -> calculate());
+        display.addKeyListener(new java.awt.event.KeyAdapter() {
+            @Override public void keyPressed(java.awt.event.KeyEvent e) {
+                if (e.getKeyCode() == java.awt.event.KeyEvent.VK_ENTER) calculate();
+                if (e.getKeyCode() == java.awt.event.KeyEvent.VK_ESCAPE) clear();
+            }
+        });
     }
 
-    private void addButton(JPanel panel, String text, ActionListener action) {
-        JButton b = new JButton(text);
-        styleButton(b, SOFT, TEXT);
-        b.addActionListener(action);
-        panel.add(b);
+    private void buildScientificPanel() {
+        scientificPanel.setOpaque(false);
+        addButton(scientificPanel, "√", COLORS.OP, COLORS.OP_HOVER, COLORS.ACCENT, e -> append("sqrt("));
+        addButton(scientificPanel, "sin", COLORS.OP, COLORS.OP_HOVER, COLORS.ACCENT, e -> append("sin("));
+        addButton(scientificPanel, "cos", COLORS.OP, COLORS.OP_HOVER, COLORS.ACCENT, e -> append("cos("));
+        addButton(scientificPanel, "tan", COLORS.OP, COLORS.OP_HOVER, COLORS.ACCENT, e -> append("tan("));
+        addButton(scientificPanel, "log", COLORS.OP, COLORS.OP_HOVER, COLORS.ACCENT, e -> append("log("));
+        addButton(scientificPanel, "ln", COLORS.OP, COLORS.OP_HOVER, COLORS.ACCENT, e -> append("ln("));
+        addButton(scientificPanel, "xʸ", COLORS.OP, COLORS.OP_HOVER, COLORS.ACCENT, e -> append("^"));
+        addButton(scientificPanel, "x!", COLORS.OP, COLORS.OP_HOVER, COLORS.ACCENT, e -> append("!"));
+        addButton(scientificPanel, "π", COLORS.OP, COLORS.OP_HOVER, COLORS.ACCENT, e -> append("pi"));
+        addButton(scientificPanel, "e", COLORS.OP, COLORS.OP_HOVER, COLORS.ACCENT, e -> append("e"));
+        addButton(scientificPanel, "abs", COLORS.OP, COLORS.OP_HOVER, COLORS.ACCENT, e -> append("abs("));
+        addButton(scientificPanel, "exp", COLORS.OP, COLORS.OP_HOVER, COLORS.ACCENT, e -> append("exp("));
     }
 
-    private void styleButton(JButton b, Color bg, Color fg) {
-        b.setBackground(bg); b.setForeground(fg);
-        b.setFont(new Font("SansSerif", Font.BOLD, 17));
-        b.setFocusPainted(false);
-        b.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(new Color(220, 211, 237)),
-                new EmptyBorder(10, 8, 10, 8)));
+    private void addButton(JPanel panel, String text, Color bg, Color hover, Color fg, ActionListener action) {
+        AnimatedButton button = new AnimatedButton(text, bg, hover, fg);
+        button.addActionListener(action);
+        panel.add(button);
     }
 
     private void append(String value) {
-        if (freshResult) { display.setText(""); freshResult = false; }
+        if (freshResult) {
+            display.setText("");
+            freshResult = false;
+        }
         display.setText(display.getText() + value);
-    }
-
-    private void chooseOperator(String op) {
-        try { firstNumber = Double.parseDouble(display.getText()); }
-        catch (NumberFormatException e) { return; }
-        operator = op; freshResult = true;
+        display.requestFocusInWindow();
     }
 
     private void calculate() {
+        String expression = display.getText().trim();
+        if (expression.isEmpty()) return;
         try {
-            double second = Double.parseDouble(display.getText());
-            double value = switch (operator) {
-                case "+" -> firstNumber + second;
-                case "-" -> firstNumber - second;
-                case "*" -> firstNumber * second;
-                case "/" -> second == 0 ? Double.NaN : firstNumber / second;
-                default -> second;
-            };
-            if (Double.isNaN(value) || Double.isInfinite(value)) throw new ArithmeticException("Invalid calculation");
-            showResult(value, display.getText());
-            operator = "";
-        } catch (RuntimeException ex) { result.setText("Error: " + ex.getMessage()); }
+            double value;
+            try {
+                value = calculator.evaluateExpression(expression);
+            } catch (RuntimeException basicParserError) {
+                value = ai.evaluate(expression);
+            }
+            showResult(value, expression);
+        } catch (RuntimeException ex) {
+            result.setText("⚠ " + ex.getMessage());
+            Toolkit.getDefaultToolkit().beep();
+        }
     }
 
     private void aiCalculate() {
+        String expression = display.getText().trim();
+        if (expression.isEmpty()) return;
         try {
-            String expression = display.getText().trim();
             double value = ai.evaluate(expression);
             showResult(value, expression);
-        } catch (RuntimeException ex) { result.setText("Try: 25% of 840 or square root of 144"); }
+        } catch (RuntimeException ex) {
+            result.setText("Try a command like: 25% of 840");
+            Toolkit.getDefaultToolkit().beep();
+        }
     }
 
     private void showResult(double value, String expression) {
         String formatted = format.format(value);
         display.setText(formatted);
-        result.setText("Result: " + formatted);
+        result.setText("✓ Result: " + formatted);
         history.add(expression, value);
-        historyModel.add(0, expression + " = " + formatted);
+        historyLabel.setText("Last: " + expression + " = " + formatted);
         freshResult = true;
         celebrate();
     }
 
     private void celebrate() {
-        Toolkit.getDefaultToolkit().beep();
         celebration.setVisible(true);
         celebration.celebrate();
+        CelebrationSound.play();
     }
 
     private void clear() {
-        display.setText(""); result.setText("0"); operator = ""; firstNumber = 0; freshResult = false;
+        display.setText("");
+        result.setText("Ready");
+        historyLabel.setText("");
+        freshResult = false;
+        display.requestFocusInWindow();
     }
 
     private void backspace() {
-        String s = display.getText();
-        if (!s.isEmpty()) display.setText(s.substring(0, s.length() - 1));
+        String text = display.getText();
+        if (!text.isEmpty()) display.setText(text.substring(0, text.length() - 1));
+        display.requestFocusInWindow();
     }
 
-    private void toggleScientific(JPanel card) {
+    private void toggleScientific() {
         scientific = !scientific;
+        scientificPanel.setVisible(scientific);
         modeLabel.setText(scientific ? "Scientific Calculator" : "Simple Calculator");
-        JOptionPane.showMessageDialog(this,
-                scientific ? "Scientific mode enabled. Use AI input for sin, cos, tan, power and square root."
-                           : "Simple mode enabled.",
-                "Calculator Mode", JOptionPane.INFORMATION_MESSAGE);
+        modeButton.setText(scientific ? "↩ Simple Mode" : "⚗ Scientific Mode");
+        pack();
+        setSize(Math.max(getWidth(), 720), scientific ? 850 : 780);
+        setLocationRelativeTo(null);
+        display.requestFocusInWindow();
     }
 }
