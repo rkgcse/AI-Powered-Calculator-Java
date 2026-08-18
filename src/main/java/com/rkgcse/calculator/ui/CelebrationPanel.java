@@ -4,21 +4,25 @@ import javax.swing.*;
 import java.awt.*;
 import java.util.Random;
 
-/** Lightweight celebration overlay drawn with Swing; no external assets required. */
+/** Animated confetti celebration overlay. */
 public class CelebrationPanel extends JPanel {
+    private static final int PIECES = 70;
     private final Random random = new Random();
+    private final Piece[] pieces = new Piece[PIECES];
     private final Timer timer;
     private int frame;
     private boolean celebrating;
 
     public CelebrationPanel() {
         setOpaque(false);
-        timer = new Timer(35, e -> advanceAnimation());
+        for (int i = 0; i < PIECES; i++) pieces[i] = new Piece();
+        timer = new Timer(25, e -> advanceAnimation());
     }
 
     private void advanceAnimation() {
         frame++;
-        if (frame > 45) {
+        for (Piece p : pieces) p.update();
+        if (frame > 95) {
             celebrating = false;
             timer.stop();
         }
@@ -28,6 +32,7 @@ public class CelebrationPanel extends JPanel {
     public void celebrate() {
         frame = 0;
         celebrating = true;
+        for (Piece p : pieces) p.reset(getWidth(), getHeight(), random);
         timer.restart();
         repaint();
     }
@@ -37,18 +42,56 @@ public class CelebrationPanel extends JPanel {
         if (!celebrating) return;
         Graphics2D g2 = (Graphics2D) g.create();
         g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-        for (int i = 0; i < 32; i++) {
-            int x = random.nextInt(Math.max(1, getWidth()));
-            int y = (frame * 9 + i * 19) % Math.max(1, getHeight());
-            int size = 5 + random.nextInt(8);
-            g2.setColor(new Color(150 + random.nextInt(90), 120 + random.nextInt(100), 180 + random.nextInt(70)));
-            g2.fillOval(x, y, size, size);
+
+        int alpha = Math.min(210, 90 + frame * 2);
+        g2.setColor(new Color(255, 255, 255, Math.max(0, 35 - frame / 3)));
+        g2.fillRoundRect(getWidth() / 2 - 170, 22, 340, 55, 28, 28);
+        g2.setColor(new Color(80, 65, 115, alpha));
+        g2.setFont(new Font("SansSerif", Font.BOLD, 26));
+        String message = "✨ Calculation complete! ✨";
+        int textX = (getWidth() - g2.getFontMetrics().stringWidth(message)) / 2;
+        g2.drawString(message, textX, 58);
+
+        for (Piece p : pieces) {
+            g2.setColor(new Color(p.color.getRed(), p.color.getGreen(), p.color.getBlue(), Math.max(0, 230 - frame * 2)));
+            g2.translate(p.x, p.y);
+            g2.rotate(p.angle);
+            g2.fillRoundRect(-p.size / 2, -p.size / 3, p.size, p.size / 2, 4, 4);
+            g2.rotate(-p.angle);
+            g2.translate(-p.x, -p.y);
         }
-        g2.setColor(new Color(80, 60, 120, Math.max(0, 180 - frame * 3)));
-        g2.setFont(new Font("SansSerif", Font.BOLD, 28));
-        String text = "Great job!";
-        int x = Math.max(10, (getWidth() - g2.getFontMetrics().stringWidth(text)) / 2);
-        g2.drawString(text, x, 45);
         g2.dispose();
+    }
+
+    private static class Piece {
+        double x, y, vx, vy, angle, spin;
+        int size;
+        Color color;
+        int width, height;
+
+        void reset(int width, int height, Random r) {
+            this.width = Math.max(width, 1);
+            this.height = Math.max(height, 1);
+            x = this.width / 2.0 + (r.nextDouble() - 0.5) * Math.min(260, this.width);
+            y = 75 + r.nextDouble() * 35;
+            vx = (r.nextDouble() - 0.5) * 4.5;
+            vy = 1.5 + r.nextDouble() * 4.0;
+            angle = r.nextDouble() * Math.PI;
+            spin = (r.nextDouble() - 0.5) * 0.25;
+            size = 7 + r.nextInt(9);
+            color = new Color(105 + r.nextInt(130), 90 + r.nextInt(130), 145 + r.nextInt(105));
+        }
+
+        void update() {
+            x += vx;
+            y += vy;
+            vy += 0.055;
+            angle += spin;
+            if (y > height + 30) {
+                y = 72;
+                x = Math.random() * width;
+                vy = 1.5 + Math.random() * 3.0;
+            }
+        }
     }
 }
