@@ -2,34 +2,16 @@ package com.rkgcse.calculator.ai;
 
 import com.rkgcse.calculator.core.CalculatorEngine;
 import java.util.Locale;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
+/** Offline natural-language layer that converts common calculation phrases to expressions. */
 public class NaturalLanguageEngine {
-    private static final Pattern NUMBER = Pattern.compile("[-+]?\\d+(?:\\.\\d+)?");
+    private final CalculatorEngine calculator = new CalculatorEngine();
 
     public double evaluate(String input) {
         if (input == null || input.isBlank()) throw new IllegalArgumentException("Enter a calculation.");
         String text = input.toLowerCase(Locale.ROOT).trim();
-        Intent intent = detectIntent(text);
-        double[] values = numbers(text);
-        CalculatorEngine engine = new CalculatorEngine();
-        return switch (intent) {
-            case ADD -> require(values, 2, engine::add);
-            case SUBTRACT -> require(values, 2, engine::subtract);
-            case MULTIPLY -> require(values, 2, engine::multiply);
-            case DIVIDE -> require(values, 2, engine::divide);
-            case POWER -> require(values, 2, engine::power);
-            case SQRT -> engine.sqrt(requireOne(values));
-            case PERCENT -> {
-                if (values.length == 1) yield values[0] / 100.0;
-                yield engine.percentOf(values[1], values[0]);
-            }
-            case SIN -> engine.sin(requireOne(values));
-            case COS -> engine.cos(requireOne(values));
-            case TAN -> engine.tan(requireOne(values));
-            default -> throw new IllegalArgumentException("I could not understand that calculation.");
-        };
+        String expression = toExpression(text);
+        return calculator.evaluateExpression(expression);
     }
 
     public Intent detectIntent(String text) {
@@ -50,20 +32,47 @@ public class NaturalLanguageEngine {
         return Intent.UNKNOWN;
     }
 
-    private double[] numbers(String text) {
-        Matcher matcher = NUMBER.matcher(text.replace("%", ""));
-        java.util.List<Double> result = new java.util.ArrayList<>();
-        while (matcher.find()) result.add(Double.parseDouble(matcher.group()));
-        return result.stream().mapToDouble(Double::doubleValue).toArray();
-    }
+    private String toExpression(String text) {
+        String t = text.replace("what is", "")
+                .replace("calculate", "")
+                .replace("please", "")
+                .replace("answer", "")
+                .replace("the", "")
+                .trim();
 
-    private double requireOne(double[] values) {
-        if (values.length < 1) throw new IllegalArgumentException("Please provide a number.");
-        return values[0];
-    }
+        if (t.contains("percent") || t.contains("%")) {
+            String cleaned = t.replace("what", "").replace("percent of", "%*").replace("% of", "%*");
+            cleaned = cleaned.replace("percent", "%").replaceAll("\\s+", "");
+            if (cleaned.matches(".*%\\*[-+]?\\d+(?:\\.\\d+)?$")) {
+                String[] parts = cleaned.split("%\\*", 2);
+                return parts[0] + "%*" + parts[1];
+            }
+            return cleaned;
+        }
 
-    private double require(double[] values, int count, java.util.function.DoubleBinaryOperator op) {
-        if (values.length < count) throw new IllegalArgumentException("Please provide two numbers.");
-        return op.applyAsDouble(values[0], values[1]);
+        t = t.replace("square root of", "sqrt(")
+                .replace("square root", "sqrt(")
+                .replace("root of", "sqrt(")
+                .replace("raised to the power of", "^")
+                .replace("raised to", "^")
+                .replace("to the power of", "^")
+                .replace("power", "^")
+                .replace("multiplied by", "*")
+                .replace("multiply by", "*")
+                .replace("times", "*")
+                .replace("divided by", "/")
+                .replace("divide by", "/")
+                .replace("plus", "+")
+                .replace("add", "+")
+                .replace("minus", "-")
+                .replace("subtract", "-")
+                .replace("sine", "sin")
+                .replace("cosine", "cos")
+                .replace("tangent", "tan")
+                .replaceAll("\\b(sin|cos|tan|sqrt|log|ln|abs|exp)\\s+([-+]?\\d+(?:\\.\\d+)?)", "$1($2)")
+                .replaceAll("\\s+", "");
+
+        if (t.startsWith("sqrt(") && !t.endsWith(")")) t += ")";
+        return t;
     }
 }
