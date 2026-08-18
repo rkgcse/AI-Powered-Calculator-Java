@@ -13,14 +13,16 @@ public class CelebrationPanel extends JPanel {
 
     public CelebrationPanel() {
         setOpaque(false);
-        timer = new Timer(35, e -> {
-            frame++;
-            if (frame > 45) {
-                celebrating = false;
-                timer.stop();
-            }
-            repaint();
-        });
+        timer = new Timer(35, e -> advanceAnimation());
+    }
+
+    private void advanceAnimation() {
+        frame++;
+        if (frame > 45) {
+            celebrating = false;
+            timer.stop();
+        }
+        repaint();
     }
 
     public void celebrate() {
@@ -44,7 +46,7 @@ public class CelebrationPanel extends JPanel {
         }
         g2.setColor(new Color(80, 60, 120, Math.max(0, 180 - frame * 3)));
         g2.setFont(new Font("SansSerif", Font.BOLD, 28));
-        String text = "🎉 Great job!";
+        String text = "Great job!";
         int x = Math.max(10, (getWidth() - g2.getFontMetrics().stringWidth(text)) / 2);
         g2.drawString(text, x, 45);
         g2.dispose();
