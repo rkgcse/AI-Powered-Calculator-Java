@@ -1,32 +1,65 @@
 # AI-Powered Calculator Java
 
-A student-friendly Java calculator that combines scientific calculations with lightweight natural-language intent recognition.
+A polished Java Swing calculator designed for everyday calculations, scientific maths, and natural-language commands.
 
-## Features
+## Highlights
 
-- Basic arithmetic: `+`, `-`, `*`, `/`
-- Scientific operations: powers, square root, percentages, trigonometry
-- Natural-language calculations such as:
-  - `what is 25% of 840`
-  - `calculate square root of 144`
-  - `what is 12 multiplied by 8`
-  - `sin 30`
-- Calculation history
-- Friendly validation and error messages
-- Java Swing desktop interface
-- Unit tests with JUnit 5
-- Maven project structure
+- Beautiful light, centered interface
+- Animated hover/press buttons
+- Full 0–9 keypad and basic operators
+- Parentheses and order of operations
+- Dedicated `=` result flow
+- Scientific mode with one-click switching
+- Natural-language AI-style calculation commands
+- Celebration confetti animation after every successful result
+- Three-note congratulatory success tone generated in Java
+- Calculation history preview
+- Keyboard Enter = calculate, Escape = clear
+- JUnit 5 test coverage
+
+## Operations
+
+### Everyday mode
+
+`+` `−` `×` `÷` `%` `(` `)` decimal values and negative numbers.
+
+### Scientific mode
+
+- Square root: `sqrt(144)`
+- Powers: `2^8`
+- Factorial: `5!`
+- Trigonometry in degrees: `sin(30)`, `cos(60)`, `tan(45)`
+- Logarithm: `log(100)`
+- Natural logarithm: `ln(2.718281828)`
+- Absolute value: `abs(-25)`
+- Exponential: `exp(2)`
+- Constants: `pi`, `e`
+
+## Natural-language examples
+
+The AI button understands commands such as:
+
+- `25% of 840` → `210`
+- `what is 12 multiplied by 8` → `96`
+- `square root of 144` → `12`
+- `2 power 5` → `32`
+- `sin 30` → `0.5`
+- `20 divided by 4` → `5`
+- `15 plus 27` → `42`
+
+The `=` button also tries the natural-language engine automatically if the normal expression parser cannot understand the input.
 
 ## AI / ML Component
 
-This project uses a lightweight **rule-based natural-language intent classifier** rather than an external API or pretrained model. The classifier identifies the user's calculation intent from keywords and extracts numerical entities using regular expressions. This keeps the application fully offline and easy to understand for a Java student project.
+The project uses a lightweight offline **natural-language intent layer** rather than pretending to use a pretrained machine-learning model. It recognizes common mathematical phrases and converts them into expressions understood by the calculator engine. This makes the project transparent, offline, and easy for a Java student to study and extend.
 
 ## Tech Stack
 
 - Java 17+
-- Swing
+- Java Swing
 - Maven
 - JUnit 5
+- Java Sound API
 
 ## Run
 
@@ -35,17 +68,17 @@ This project uses a lightweight **rule-based natural-language intent classifier*
 - JDK 17 or later
 - Maven 3.8+
 
-### Start the application
+### Tests
+
+```bash
+mvn clean test
+```
+
+### Build and run
 
 ```bash
 mvn clean package
 java -jar target/ai-powered-calculator-java-1.0.0.jar
-```
-
-### Run tests
-
-```bash
-mvn test
 ```
 
 ## Project Structure
@@ -62,27 +95,23 @@ src/
  │   ├── history/
  │   │   └── CalculationHistory.java
  │   └── ui/
- │       └── CalculatorFrame.java
+ │       ├── AnimatedButton.java
+ │       ├── CalculatorFrame.java
+ │       ├── CelebrationPanel.java
+ │       └── CelebrationSound.java
  └── test/java/com/rkgcse/calculator/
      ├── ai/NaturalLanguageEngineTest.java
      └── core/CalculatorEngineTest.java
 ```
 
-## Example Inputs
-
-| Input | Result |
-|---|---:|
-| `25 + 35` | `60` |
-| `25% of 840` | `210` |
-| `square root of 144` | `12` |
-| `12 multiplied by 8` | `96` |
-| `sin 30` | `0.5` |
-| `2 power 5` | `32` |
-
 ## Learning Goals
 
-This project demonstrates Java OOP, interfaces between application layers, Swing UI development, regex-based NLP, unit testing, exception handling, and Maven project management.
+This project demonstrates Java OOP, recursive-descent expression parsing, Swing UI development, event-driven animations, natural-language intent recognition, Java audio generation, unit testing, exception handling, and Maven project management.
 
 ## License
 
 MIT
+
+---
+
+**made with ❤️ by Raushan kumar**
